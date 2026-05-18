@@ -37,7 +37,7 @@
             document.body.innerHTML = "<h2>Ошибка: откройте приложение из Telegram</h2>";
         } else {
             const userId = user.id;
-            const API_URL = "https://script.google.com/macros/library/d/1cJkixvrPOi-uLTezrF6baYfUwvyGqCg6kfcdZP-HT6GPkG-ZWo1Qf-vP/1"; // ← СЮДА ВСТАВИТЬ ССЫЛКУ
+            const API_URL = "https://script.google.com/macros/s/AKfycbxYR7PxhjZPCUYUT2PSWsigC5gvbgURMUzIuiHYjQ4ny1bRLMWeKEJ8k3eqNHgSOVtX/exec"; // ← СЮДА ВСТАВИТЬ ССЫЛКУ
             
             fetch(API_URL + "?user_id=" + userId)
                 .then(r => r.json())
