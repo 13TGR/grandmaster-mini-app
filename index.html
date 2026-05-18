@@ -5,44 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; padding: 20px; }
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 { font-size: 28px; margin-bottom: 10px; }
+        .child-name { font-size: 22px; font-weight: bold; margin: 10px 0 30px; }
+        .element { margin: 25px 0; }
+        .element-label { display: flex; justify-content: space-between; font-size: 18px; margin-bottom: 5px; }
+        .bar-container {
+            width: 100%;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 5px 0 10px;
+        }
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 15px;
+            transition: width 1s ease;
+        }
+        .fire .bar-fill { background: linear-gradient(90deg, #ff4444, #ff8888); }
+        .water .bar-fill { background: linear-gradient(90deg, #4488ff, #88ccff); }
+        .tree .bar-fill { background: linear-gradient(90deg, #44aa44, #88ff88); }
+        .message {
+            margin-top: 30px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 12px;
+            font-style: italic;
+        }
         .error { color: #ff6666; }
-        pre { background: #333; padding: 10px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; }
+        .update-btn {
+            background: #444;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .update-btn:active { background: #666; }
     </style>
 </head>
 <body>
-    <h2>Отладка Карты Силы</h2>
-    <div id="info">Инициализация...</div>
+    <h1>🌳 Карта Силы</h1>
+    <div id="app">
+        <div class="child-name" id="childName">...</div>
+        
+        <div class="element fire">
+            <div class="element-label"><span>🔥 Огонь (Дисциплина)</span><span id="fireVal">0%</span></div>
+            <div class="bar-container"><div class="bar-fill" id="fireBar"></div></div>
+        </div>
+        
+        <div class="element water">
+            <div class="element-label"><span>💧 Вода (Гибкость)</span><span id="waterVal">0%</span></div>
+            <div class="bar-container"><div class="bar-fill" id="waterBar"></div></div>
+        </div>
+        
+        <div class="element tree">
+            <div class="element-label"><span>🌳 Дерево (Арсенал ударов)</span><span id="treeVal">0%</span></div>
+            <div class="bar-container"><div class="bar-fill" id="treeBar"></div></div>
+        </div>
+        
+        <div class="message" id="coachMsg"></div>
+        <button class="update-btn" onclick="location.reload()">🔄 Обновить</button>
+    </div>
+    <div id="error" class="error" style="display:none;"></div>
 
     <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbxYR7PxhjZPCUYUT2PSWsigC5gvbgURMUzIuiHYjQ4ny1bRLMWeKEJ8k3eqNHgSOVtX/exec"; // ← вставьте ваш URL
+
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
 
         const user = tg.initDataUnsafe?.user;
         if (!user) {
-            document.getElementById("info").innerHTML = '<span class="error">Ошибка: откройте приложение из Telegram</span>';
+            document.getElementById("app").style.display = "none";
+            document.getElementById("error").style.display = "block";
+            document.getElementById("error").innerText = "Пожалуйста, откройте приложение через кнопку в боте.";
         } else {
             const userId = user.id;
-            const API_URL = "https://script.google.com/macros/s/AKfycbxYR7PxhjZPCUYUT2PSWsigC5gvbgURMUzIuiHYjQ4ny1bRLMWeKEJ8k3eqNHgSOVtX/exec"; // ← СЮДА ВАШ URL
-
-            document.getElementById("info").innerHTML = `Ваш Telegram ID: ${userId}<br>Загружаем данные из API...`;
-
+            
             fetch(API_URL + "?user_id=" + userId)
-                .then(response => {
-                    if (!response.ok) throw new Error("Статус ответа: " + response.status);
-                    return response.json();
+                .then(r => {
+                    if (!r.ok) throw new Error("Ошибка сети: " + r.status);
+                    return r.json();
                 })
                 .then(data => {
-                    document.getElementById("info").innerHTML += 
-                        `<br><b>Ответ API:</b><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
                     if (data.error) {
-                        document.getElementById("info").innerHTML += '<span class="error">Пользователь не найден. Проверьте TelegramID в таблице.</span>';
+                        document.getElementById("childName").innerText = "Пользователь не найден";
+                        document.getElementById("coachMsg").innerText = "Обратитесь к тренеру для привязки аккаунта.";
+                        return;
                     }
+                    
+                    document.getElementById("childName").innerText = data.child;
+                    
+                    const fire = parseInt(data.fire) || 0;
+                    const water = parseInt(data.water) || 0;
+                    const tree = parseInt(data.tree) || 0;
+                    
+                    document.getElementById("fireBar").style.width = fire + "%";
+                    document.getElementById("fireVal").innerText = fire + "%";
+                    document.getElementById("waterBar").style.width = water + "%";
+                    document.getElementById("waterVal").innerText = water + "%";
+                    document.getElementById("treeBar").style.width = tree + "%";
+                    document.getElementById("treeVal").innerText = tree + "%";
+                    
+                    document.getElementById("coachMsg").innerText = data.message || "";
                 })
                 .catch(error => {
-                    document.getElementById("info").innerHTML += 
-                        `<br><span class="error">Ошибка при запросе API:</span><br><pre>${error.message}</pre>`;
+                    document.getElementById("app").style.display = "none";
+                    document.getElementById("error").style.display = "block";
+                    document.getElementById("error").innerText = "Не удалось загрузить данные. Проверьте подключение.";
+                    console.error(error);
                 });
         }
     </script>
