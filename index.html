@@ -3,132 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <style>
         body {
             background: #1a1a1a;
             color: white;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: sans-serif;
             text-align: center;
             padding: 20px;
             margin: 0;
         }
-        h1 { font-size: 28px; margin-bottom: 10px; }
-        .child-name { font-size: 22px; font-weight: bold; margin: 10px 0 30px; }
-        .element { margin: 25px 0; }
-        .element-label { display: flex; justify-content: space-between; font-size: 18px; margin-bottom: 5px; }
-        .bar-container {
-            width: 100%;
+
+        .bar {
+            width: 80%;
             height: 30px;
             background: #333;
+            margin: 10px auto;
             border-radius: 15px;
             overflow: hidden;
-            margin: 5px 0 10px;
         }
-        .bar-fill {
+
+        .fill {
             height: 100%;
             width: 0%;
+            background: linear-gradient(90deg, #ff4444, #ff8888);
             border-radius: 15px;
-            transition: width 1s ease;
         }
-        .fire .bar-fill { background: linear-gradient(90deg, #ff4444, #ff8888); }
-        .water .bar-fill { background: linear-gradient(90deg, #4488ff, #88ccff); }
-        .tree .bar-fill { background: linear-gradient(90deg, #44aa44, #88ff88); }
-        .message {
-            margin-top: 30px;
-            padding: 15px;
-            background: #2a2a2a;
-            border-radius: 12px;
-            font-style: italic;
+
+        .water .fill {
+            background: linear-gradient(90deg, #4444ff, #8888ff);
         }
-        .error { color: #ff6666; }
-        .update-btn {
-            background: #444;
-            color: white;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 20px;
-            font-size: 16px;
-            margin-top: 20px;
-            cursor: pointer;
+
+        .tree .fill {
+            background: linear-gradient(90deg, #44aa44, #88ff88);
         }
-        .update-btn:active { background: #666; }
+
+        .loader {
+            position: fixed;
+            inset: 0;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            background: #1a1a1a;
+            z-index: 9999;
+        }
+
+        .loader img {
+            width: 140px;
+            height: 140px;
+        }
     </style>
 </head>
+
 <body>
-    <h1>🌳 Карта Силы</h1>
-    <div id="app">
-        <div class="child-name" id="childName">...</div>
-        
-        <div class="element fire">
-            <div class="element-label"><span>🔥 Огонь (Дисциплина)</span><span id="fireVal">0%</span></div>
-            <div class="bar-container"><div class="bar-fill" id="fireBar"></div></div>
-        </div>
-        
-        <div class="element water">
-            <div class="element-label"><span>💧 Вода (Гибкость)</span><span id="waterVal">0%</span></div>
-            <div class="bar-container"><div class="bar-fill" id="waterBar"></div></div>
-        </div>
-        
-        <div class="element tree">
-            <div class="element-label"><span>🌳 Дерево (Арсенал ударов)</span><span id="treeVal">0%</span></div>
-            <div class="bar-container"><div class="bar-fill" id="treeBar"></div></div>
-        </div>
-        
-        <div class="message" id="coachMsg"></div>
-        <button class="update-btn" onclick="location.reload()">🔄 Обновить</button>
+
+    <div class="loader" id="loader">
+        <img src="logo.svg" alt="logo">
     </div>
-    <div id="error" class="error" style="display:none;"></div>
+
+    <h1>🔥 Карта Силы</h1>
+
+    <h2 id="childName">Загрузка...</h2>
+
+    <p>Огонь <span id="fireVal">0%</span></p>
+    <div class="bar">
+        <div id="fireBar" class="fill" style="width:0%"></div>
+    </div>
+
+    <p>Вода <span id="waterVal">0%</span></p>
+    <div class="bar water">
+        <div id="waterBar" class="fill" style="width:0%"></div>
+    </div>
+
+    <p>Дерево <span id="treeVal">0%</span></p>
+    <div class="bar tree">
+        <div id="treeBar" class="fill" style="width:0%"></div>
+    </div>
+
+    <p><i id="coachMsg"></i></p>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxYR7PxhjZPCUYUT2PSWsigC5gvbgURMUzIuiHYjQ4ny1bRLMWeKEJ8k3eqNHgSOVtX/exec"; // ← вставьте ваш URL
-
         const tg = window.Telegram.WebApp;
+
         tg.ready();
         tg.expand();
 
         const user = tg.initDataUnsafe?.user;
+
         if (!user) {
-            document.getElementById("app").style.display = "none";
-            document.getElementById("error").style.display = "block";
-            document.getElementById("error").innerText = "Пожалуйста, откройте приложение через кнопку в боте.";
+            document.body.innerHTML = "<h2>Ошибка: откройте приложение из Telegram</h2>";
         } else {
+
             const userId = user.id;
-            
+
+            const API_URL = "https://script.google.com/macros/s/AKfycbxYR7PxhjZPCUYUT2PSWsigC5gvbgURMUzIuiHYjQ4ny1bRLMWeKEJ8k3eqNHgSOVtX/exec";
+
             fetch(API_URL + "?user_id=" + userId)
-                .then(r => {
-                    if (!r.ok) throw new Error("Ошибка сети: " + r.status);
-                    return r.json();
-                })
+
+                .then(r => r.json())
+
                 .then(data => {
+
                     if (data.error) {
                         document.getElementById("childName").innerText = "Пользователь не найден";
-                        document.getElementById("coachMsg").innerText = "Обратитесь к тренеру для привязки аккаунта.";
                         return;
                     }
-                    
+
                     document.getElementById("childName").innerText = data.child;
-                    
-                    const fire = parseInt(data.fire) || 0;
-                    const water = parseInt(data.water) || 0;
-                    const tree = parseInt(data.tree) || 0;
-                    
-                    document.getElementById("fireBar").style.width = fire + "%";
-                    document.getElementById("fireVal").innerText = fire + "%";
-                    document.getElementById("waterBar").style.width = water + "%";
-                    document.getElementById("waterVal").innerText = water + "%";
-                    document.getElementById("treeBar").style.width = tree + "%";
-                    document.getElementById("treeVal").innerText = tree + "%";
-                    
-                    document.getElementById("coachMsg").innerText = data.message || "";
-                })
-                .catch(error => {
-                    document.getElementById("app").style.display = "none";
-                    document.getElementById("error").style.display = "block";
-                    document.getElementById("error").innerText = "Не удалось загрузить данные. Проверьте подключение.";
-                    console.error(error);
+
+                    document.getElementById("fireBar").style.width = data.fire + "%";
+                    document.getElementById("fireVal").innerText = data.fire + "%";
+
+                    document.getElementById("waterBar").style.width = data.water + "%";
+                    document.getElementById("waterVal").innerText = data.water + "%";
+
+                    document.getElementById("treeBar").style.width = data.tree + "%";
+                    document.getElementById("treeVal").innerText = data.tree + "%";
+
+                    document.getElementById("coachMsg").innerText = data.message;
+
+                    document.getElementById("loader").style.display = "none";
                 });
         }
     </script>
+
 </body>
 </html>
